@@ -3,7 +3,7 @@ name: Release ClipBlock
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
   workflow_dispatch:
 
 permissions:
@@ -20,12 +20,12 @@ jobs:
       - name: 🐹 Configurar Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          go-version: "1.21"
 
       - name: 🟢 Configurar Node
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: "18"
 
       - name: 🔧 Instalar Dependências do Linux
         run: |
@@ -44,7 +44,7 @@ jobs:
         run: |
           # 1. Cria diretório dist
           mkdir -p dist/bin
-          
+
           # 2. Copia o binário (Lida com o fato de o Wails poder jogar na raiz ou no build/bin)
           if [ -f "build/bin/clip-block" ]; then
             cp build/bin/clip-block dist/bin/
@@ -54,20 +54,24 @@ jobs:
             echo "❌ Erro: Binário não encontrado!"
             exit 1
           fi
-          
+
           # 3. Copia o instalador (Da RAIZ para dentro do pacote)
           cp install.sh dist/
-          
+
+          if [ -f "appicon.png" ]; then
+            cp appicon.png dist/
+          fi
+
           # 4. Permissões
           chmod +x dist/install.sh
           chmod +x dist/bin/clip-block
-          
+
           # 5. Compactação
           # Entra na pasta dist e compacta tudo para um arquivo na pasta PAI (raiz do workspace)
           FILENAME="clip-block_linux_amd64.tar.gz"
           cd dist
           tar -czf ../$FILENAME *
-          
+
           # Volta para a raiz e mostra o arquivo (para debug)
           cd ..
           echo "✅ Arquivo criado:"
