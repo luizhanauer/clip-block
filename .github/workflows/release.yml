@@ -3,11 +3,11 @@ name: Release ClipBlock
 on:
   push:
     tags:
-      - 'v*' # Dispara ao subir tags como v1.0.0
-  workflow_dispatch: # Permite rodar manualmente pelo painel do GitHub
+      - 'v*'
+  workflow_dispatch:
 
 permissions:
-  contents: write # Essencial para permitir que o bot crie a Release e suba os arquivos
+  contents: write
 
 jobs:
   build-and-release:
@@ -20,7 +20,7 @@ jobs:
       - name: 🐹 Configurar Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.21' # Versão estável compatível com Wails v2
+          go-version: '1.21'
 
       - name: 🟢 Configurar Node
         uses: actions/setup-node@v4
@@ -37,50 +37,48 @@ jobs:
 
       - name: 🏗️ Compilar ClipBlock
         run: |
-          # 1. Garante que as dependências do Go estão em ordem
           go mod tidy
-          
-          # 2. Compila o projeto usando o Wails (Gera o Frontend e o Binário)
-          # O parâmetro -o define o nome do arquivo final
           wails build -platform linux/amd64 -tags webkit2_41 -clean -o clip-block
 
       - name: 📦 Preparar Empacotamento
         run: |
-          # Cria a estrutura de pastas para o tar.gz
+          # 1. Cria diretório dist
           mkdir -p dist/bin
           
-          # O Wails por padrão coloca o binário em build/bin/
+          # 2. Copia o binário (Lida com o fato de o Wails poder jogar na raiz ou no build/bin)
           if [ -f "build/bin/clip-block" ]; then
             cp build/bin/clip-block dist/bin/
-          else
-            # Caso o Wails tenha gerado na raiz por causa do parâmetro -o
+          elif [ -f "clip-block" ]; then
             cp clip-block dist/bin/
+          else
+            echo "❌ Erro: Binário não encontrado!"
+            exit 1
           fi
           
-          # Copia o script de instalação para a raiz do pacote
-          cp scripts/install.sh dist/
+          # 3. Copia o instalador (Da RAIZ para dentro do pacote)
+          cp install.sh dist/
           
-          # Garante que tudo tenha permissão de execução
+          # 4. Permissões
           chmod +x dist/install.sh
           chmod +x dist/bin/clip-block
           
-          # Define variáveis para o nome do arquivo
-          ARCH="amd64"
-          FILENAME="clip-block_linux_${ARCH}.tar.gz"
-          
-          # Compacta o conteúdo da pasta dist
+          # 5. Compactação
+          # Entra na pasta dist e compacta tudo para um arquivo na pasta PAI (raiz do workspace)
+          FILENAME="clip-block_linux_amd64.tar.gz"
           cd dist
           tar -czf ../$FILENAME *
           
-          # Exporta o caminho para os próximos steps
-          echo "ASSET_NAME=$FILENAME" >> $GITHUB_ENV
-          echo "ASSET_PATH=$FILENAME" >> $GITHUB_ENV
+          # Volta para a raiz e mostra o arquivo (para debug)
+          cd ..
+          echo "✅ Arquivo criado:"
+          ls -lh $FILENAME
 
       - name: 🚀 Criar Release no GitHub
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: ${{ env.ASSET_PATH }}
+          # AQUI ESTÁ O TRUQUE: Usar wildcard garante que ele ache o arquivo
+          files: "*.tar.gz"
           name: Release ${{ github.ref_name }}
           tag_name: ${{ github.ref }}
           generate_release_notes: true
