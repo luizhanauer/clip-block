@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClipBlock | Gerenciador de Clipboard</title>
+    <meta name="description" content="O gerenciador de área de transferência simples, rápido e invisível para Linux.">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-color: #0f0c29;
+            --bg-gradient: linear-gradient(to right, #24243e, #302b63, #0f0c29);
+            --primary: #8e2de2;
+            --secondary: #4a00e0;
+            --accent: #b084cc;
+            --text: #e0e0e0;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-color);
+            background: var(--bg-gradient);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Container Principal */
+        .container {
+            max-width: 800px;
+            width: 90%;
+            text-align: center;
+            padding: 4rem 1rem;
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        /* Cabeçalho */
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            background: -webkit-linear-gradient(45deg, #c471ed, #f64f59);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -1px;
+        }
+
+        p.subtitle {
+            font-size: 1.2rem;
+            color: #a0a0b0;
+            margin-bottom: 2.5rem;
+        }
+
+        /* Caixa de Código (Instalação) */
+        .install-box {
+            background: #1e1e2e;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            margin-bottom: 3rem;
+            text-align: left;
+            transition: transform 0.2s;
+        }
+
+        .install-box:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary);
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            color: #bd93f9; /* Dracula Purple */
+            font-size: 0.95rem;
+            word-break: break-all;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 50%;
+            right: 15px;
+            transform: translateY(-50%);
+            background: var(--primary);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .copy-btn:hover {
+            background: var(--secondary);
+        }
+
+        /* Grid de Features */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 4rem;
+        }
+
+        .feature-card {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            text-align: left;
+        }
+
+        .feature-card h3 {
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .feature-card p {
+            font-size: 0.9rem;
+            color: #ccc;
+        }
+
+        /* Área de Doação */
+        .donation-section {
+            background: rgba(142, 45, 226, 0.1);
+            border: 1px solid rgba(142, 45, 226, 0.3);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-top: 2rem;
+        }
+
+        .donation-text {
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+            font-weight: 500;
+        }
+
+        .donation-section img {
+            transition: transform 0.2s;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+        }
+
+        .donation-section img:hover {
+            transform: scale(1.05);
+        }
+
+        /* Rodapé */
+        footer {
+            margin-top: 4rem;
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        footer a {
+            color: #888;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        footer a:hover {
+            color: var(--accent);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 600px) {
+            h1 { font-size: 2.5rem; }
+            .copy-btn { position: relative; top: 0; right: 0; transform: none; margin-top: 10px; width: 100%; }
+            .install-box { text-align: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>ClipBlock</h1>
+        <p class="subtitle">Seu histórico de copiar e colar, invisível e organizado.</p>
+
+        <div class="install-box">
+            <code id="cmd">curl -sSL https://luizhanauer.github.io/clip-block/get | sh</code>
+            <button class="copy-btn" onclick="copyCommand()">Copiar</button>
+        </div>
+
+        <div class="features">
+            <div class="feature-card">
+                <h3>⚡ Rápido (F9)</h3>
+                <p>Aperte F9 para abrir, clique fora para esconder. Fluxo de trabalho ininterrupto.</p>
+            </div>
+            <div class="feature-card">
+                <h3>🛡️ Privado</h3>
+                <p>Seus dados ficam no seu PC. Nada sobe para a nuvem sem você querer.</p>
+            </div>
+            <div class="feature-card">
+                <h3>🧹 Limpo</h3>
+                <p>Ferramentas de formatação de texto (JSON, Upper, Lower) integradas.</p>
+            </div>
+        </div>
+
+        <div class="donation-section">
+            <p class="donation-text">
+                Se você gostou do meu trabalho e quer me agradecer,<br> 
+                você pode me pagar um café :)
+            </p>
+            
+            <a href="https://www.paypal.com/donate/?hosted_button_id=SFR785YEYHC4E" target="_blank">
+                <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" 
+                     alt="Buy Me A Coffee" 
+                     style="height: 50px !important; width: auto !important;">
+            </a>
+        </div>
+
+        <footer>
+            <p>Desenvolvido com 💜 por <a href="https://github.com/luizhanauer">Luiz Hanauer</a></p>
+            <p style="margin-top: 5px;"><a href="https://github.com/luizhanauer/clip-block">Ver código no GitHub</a></p>
+        </footer>
+    </div>
+
+    <script>
+        function copyCommand() {
+            const code = document.getElementById('cmd').innerText;
+            navigator.clipboard.writeText(code).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                const originalText = btn.innerText;
+                btn.innerText = "Copiado!";
+                btn.style.background = "#28a745"; // Verde
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.style.background = ""; // Volta ao original
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>
