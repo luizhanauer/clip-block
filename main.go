@@ -17,13 +17,17 @@ var assets embed.FS
 
 func main() {
 	// 1. Inicializa Infra
-	repo := storage.NewJSONRepository("clips.json")
+	repo, err := storage.NewSQLiteRepository()
+	if err != nil {
+		println("Error initializing database:", err.Error())
+		return
+	}
 
 	// 2. Inicializa App Core
 	myApp := app.NewApp(repo)
 
 	// 3. Roda Wails
-	err := wails.Run(&options.App{
+	err = wails.Run(&options.App{
 		Title:  "ClipBlock",
 		Width:  800, // Ajustado para ser mais 'slim' como um sidebar
 		Height: 700,

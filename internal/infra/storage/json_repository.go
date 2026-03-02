@@ -165,13 +165,6 @@ func (r *JSONRepository) DeleteOlderThan(before time.Time) (int, error) {
 	return 0, nil
 }
 
-func GetDatabasePath() string {
-	home, _ := os.UserHomeDir()
-	dir := filepath.Join(home, ".local", "share", "clip-block")
-	os.MkdirAll(dir, 0755)
-	return filepath.Join(dir, "clip-block.db")
-}
-
 func (r *JSONRepository) DeleteAllUnpinned() (int, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
