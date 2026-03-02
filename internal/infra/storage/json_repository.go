@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"sort"
 	"sync"
+	"time"
 )
 
 type JSONRepository struct {
@@ -49,21 +50,54 @@ func (r *JSONRepository) saveFile(clips []domain.Clip) error {
 	return os.WriteFile(r.filePath, data, 0644)
 }
 
-func (r *JSONRepository) GetAll() ([]domain.Clip, error) {
+func (r *JSONRepository) GetAll(page, pageSize int, pinned *bool) ([]domain.Clip, int, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	clips, err := r.load()
+	allClips, err := r.load()
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	// Ordena: Pinned primeiro (opcional), depois por data decrescente
-	sort.Slice(clips, func(i, j int) bool {
-		return clips[i].CreatedAt.After(clips[j].CreatedAt)
+	// 1. Filtra se necessário
+	var filteredClips []domain.Clip
+	if pinned == nil {
+		// Retorna todos os clips se nenhum filtro for especificado.
+		filteredClips = allClips
+	} else {
+		for _, c := range allClips {
+			if c.IsPinned == *pinned {
+				filteredClips = append(filteredClips, c)
+			}
+		}
+	}
+
+	// 2. Ordena por data (mais recente primeiro)
+	sort.Slice(filteredClips, func(i, j int) bool {
+		return filteredClips[i].CreatedAt.After(filteredClips[j].CreatedAt)
 	})
 
-	return clips, nil
+	totalItems := len(filteredClips)
+
+	// 3. Pagina o resultado
+	if page < 1 {
+		page = 1
+	}
+	if pageSize <= 0 {
+		pageSize = totalItems // ou um valor padrão
+	}
+
+	start := (page - 1) * pageSize
+	if start >= totalItems {
+		return []domain.Clip{}, totalItems, nil // Página fora do range
+	}
+
+	end := start + pageSize
+	if end > totalItems {
+		end = totalItems
+	}
+
+	return filteredClips[start:end], totalItems, nil
 }
 
 func (r *JSONRepository) Save(clip domain.Clip) error {
@@ -102,4 +136,94 @@ func (r *JSONRepository) TogglePin(id string) error {
 		}
 	}
 	return r.saveFile(clips)
+}
+
+func (r *JSONRepository) DeleteOlderThan(before time.Time) (int, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	clips, err := r.load()
+	if err != nil {
+		return 0, err
+	}
+
+	var clipsToKeep []domain.Clip
+	originalCount := len(clips)
+
+	for _, c := range clips {
+		// Mantém o clip se ele for fixado (pinned) OU se não for mais antigo que a data de corte
+		if c.IsPinned || !c.CreatedAt.Before(before) {
+			clipsToKeep = append(clipsToKeep, c)
+		}
+	}
+
+	deletedCount := originalCount - len(clipsToKeep)
+	if deletedCount > 0 {
+		return deletedCount, r.saveFile(clipsToKeep)
+	}
+
+	return 0, nil
+}
+
+func GetDatabasePath() string {
+	home, _ := os.UserHomeDir()
+	dir := filepath.Join(home, ".local", "share", "clip-block")
+	os.MkdirAll(dir, 0755)
+	return filepath.Join(dir, "clip-block.db")
+}
+
+func (r *JSONRepository) DeleteAllUnpinned() (int, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	clips, err := r.load()
+	if err != nil {
+		return 0, err
+	}
+
+	var clipsToKeep []domain.Clip
+	originalCount := len(clips)
+
+	for _, c := range clips {
+		if c.IsPinned {
+			clipsToKeep = append(clipsToKeep, c)
+		}
+	}
+
+	deletedCount := originalCount - len(clipsToKeep)
+	if deletedCount > 0 {
+		return deletedCount, r.saveFile(clipsToKeep)
+	}
+
+	return 0, nil
+}
+
+func (r *JSONRepository) DeleteUnpinnedInDateRange(start, end time.Time) (int, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	clips, err := r.load()
+	if err != nil {
+		return 0, err
+	}
+
+	var clipsToKeep []domain.Clip
+	originalCount := len(clips)
+
+	for _, c := range clips {
+		isWithinRange := !c.CreatedAt.Before(start) && c.CreatedAt.Before(end)
+		// Mantém o clip se:
+		// 1. Estiver fixado
+		// 2. OU se NÃO estiver no intervalo de datas para apagar
+		if c.IsPinned || !isWithinRange {
+			clipsToKeep = append(clipsToKeep, c)
+		}
+	}
+
+	deletedCount := originalCount - len(clipsToKeep)
+	if deletedCount > 0 {
+		return deletedCount, r.saveFile(clipsToKeep)
+	}
+
+	return 0, nil
 }

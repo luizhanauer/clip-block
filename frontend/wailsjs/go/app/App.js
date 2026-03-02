@@ -6,12 +6,24 @@ export function AddClip(arg1) {
   return window['go']['app']['App']['AddClip'](arg1);
 }
 
+export function CleanAllUnpinned() {
+  return window['go']['app']['App']['CleanAllUnpinned']();
+}
+
+export function CleanClipsOlderThan(arg1) {
+  return window['go']['app']['App']['CleanClipsOlderThan'](arg1);
+}
+
+export function CleanTodayClips() {
+  return window['go']['app']['App']['CleanTodayClips']();
+}
+
 export function DeleteClip(arg1) {
   return window['go']['app']['App']['DeleteClip'](arg1);
 }
 
-export function GetClips() {
-  return window['go']['app']['App']['GetClips']();
+export function GetClips(arg1, arg2, arg3) {
+  return window['go']['app']['App']['GetClips'](arg1, arg2, arg3);
 }
 
 export function OnSecondInstanceLaunch(arg1) {

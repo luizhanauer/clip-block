@@ -27,7 +27,16 @@ func NewClip(content string) Clip {
 // ClipRepository define o contrato para persistência
 type ClipRepository interface {
 	Save(clip Clip) error
-	GetAll() ([]Clip, error)
+	// GetAll retorna uma fatia paginada de clips e o total de itens.
+	// O filtro 'pinned' pode ser nil (todos), true (fixados) ou false (não fixados).
+	GetAll(page, pageSize int, pinned *bool) (clips []Clip, total int, err error)
 	Delete(id string) error
 	TogglePin(id string) error
+	// DeleteOlderThan apaga clips (não fixados) criados antes da data especificada.
+	// Retorna o número de clips apagados.
+	DeleteOlderThan(before time.Time) (int, error)
+	// DeleteAllUnpinned apaga todos os clips que não estão fixados.
+	DeleteAllUnpinned() (int, error)
+	// DeleteUnpinnedInDateRange apaga clips não fixados dentro de um intervalo de datas.
+	DeleteUnpinnedInDateRange(start, end time.Time) (int, error)
 }

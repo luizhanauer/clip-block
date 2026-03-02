@@ -37,8 +37,7 @@ func main() {
 			myApp,
 		},
 		SingleInstanceLock: &options.SingleInstanceLock{
-			UniqueId: "clip-block-uuid-v1",
-			// [CORREÇÃO 3] Linha descomentada para ativar a lógica do F9
+			UniqueId:               "clip-block-uuid-v1",
 			OnSecondInstanceLaunch: myApp.OnSecondInstanceLaunch,
 		},
 		Linux: &linux.Options{
