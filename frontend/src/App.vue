@@ -12,6 +12,7 @@ import {
 } from '../wailsjs/go/app/App';
 import { EventsOn } from '../wailsjs/runtime/runtime';
 import ClipCard from './components/ClipCard.vue';
+import GenericModal from './components/GenericModal.vue';
 import { Clock, Pin, List, AlignLeft, Code, X, Trash2, ChevronLeft, ChevronRight } from 'lucide-vue-next';
 import type { Clip } from './types/Clip';
 import type { app } from '../wailsjs/go/models';
@@ -23,9 +24,19 @@ const selectedIds = ref<Set<string>>(new Set());
 const isCleanModalOpen = ref(false);
 const isLoading = ref(true);
 
+// --- Estado do Modal Genérico ---
+const genericModalState = ref({
+  isOpen: false,
+  title: '',
+  message: '',
+  type: 'alert' as 'alert' | 'confirm',
+  confirmVariant: 'primary' as 'primary' | 'danger',
+  onConfirm: () => {},
+});
+
 // --- Estado de Paginação ---
 const currentPage = ref(1);
-const pageSize = 50;
+const pageSize = 20;
 const totalPages = ref(1);
 const totalItems = ref(0);
 
@@ -129,34 +140,86 @@ const handleCopy = async (content: string) => {
 };
 
 // --- Ações de Limpeza e Paginação ---
-const runClean = async (mode: 'today' | 'olderThan30Days' | 'allUnpinned') => {
-  let count = 0;
-  let actionDescription = '';
+const showModal = (options: {
+  title: string;
+  message: string;
+  type: 'alert' | 'confirm';
+  confirmVariant?: 'primary' | 'danger';
+  onConfirm: () => void;
+}) => {
+  genericModalState.value = {
+    isOpen: true,
+    title: options.title,
+    message: options.message,
+    type: options.type,
+    confirmVariant: options.confirmVariant || 'primary',
+    onConfirm: options.onConfirm,
+  };
+};
 
-  try {
-    switch (mode) {
-      case 'today':
-        if (!confirm("Deseja apagar todos os clips de hoje (exceto os salvos)?")) return;
-        actionDescription = 'clips de hoje';
-        count = await CleanTodayClips();
-        break;
-      case 'olderThan30Days':
-        if (!confirm("Deseja apagar todos os clips com mais de 30 dias (exceto os salvos)?")) return;
-        actionDescription = 'clips com mais de 30 dias';
-        count = await CleanClipsOlderThan(30);
-        break;
-      case 'allUnpinned':
-        if (!confirm("ATENÇÃO: Esta ação é irreversível. Deseja apagar TODOS os clips que não estão salvos?")) return;
-        actionDescription = 'todos os clips não salvos';
-        count = await CleanAllUnpinned();
-        break;
-    }
-    alert(`${count} ${actionDescription} foram apagados.`);
-  } catch (e) {
-    alert(`Erro ao limpar clips: ${e}`);
-  } finally {
-    isCleanModalOpen.value = false;
+const handleModalConfirm = () => {
+  if (genericModalState.value.onConfirm) {
+    genericModalState.value.onConfirm();
   }
+};
+
+const handleModalClose = () => {
+  genericModalState.value.isOpen = false;
+};
+
+const cleanActions = {
+  today: {
+    confirmText: "Deseja apagar todos os clips de hoje (exceto os salvos)?",
+    action: CleanTodayClips,
+    description: 'clips de hoje',
+  },
+  olderThan30Days: {
+    confirmText: "Deseja apagar todos os clips com mais de 30 dias (exceto os salvos)?",
+    action: () => CleanClipsOlderThan(30),
+    description: 'clips com mais de 30 dias',
+  },
+  allUnpinned: {
+    confirmText: "ATENÇÃO: Esta ação é irreversível. Deseja apagar TODOS os clips que não estão salvos?",
+    action: CleanAllUnpinned,
+    description: 'todos os clips não salvos',
+  },
+};
+
+type CleanMode = keyof typeof cleanActions;
+
+const runClean = async (mode: CleanMode) => {
+  const config = cleanActions[mode];
+
+  const confirmAction = async () => {
+    genericModalState.value.isOpen = false; // Fecha o modal de confirmação
+    try {
+      const count = await config.action();
+      showModal({
+        title: 'Limpeza Concluída',
+        message: `${count} ${config.description} foram apagados.`,
+        type: 'alert',
+        onConfirm: () => { genericModalState.value.isOpen = false; },
+      });
+    } catch (e: any) {
+      showModal({
+        title: 'Erro na Limpeza',
+        message: `Ocorreu um erro ao limpar os clips: ${e}`,
+        type: 'alert',
+        confirmVariant: 'danger',
+        onConfirm: () => { genericModalState.value.isOpen = false; },
+      });
+    } finally {
+      isCleanModalOpen.value = false; // Fecha o modal de opções de limpeza
+    }
+  };
+
+  showModal({
+    title: 'Confirmar Limpeza',
+    message: config.confirmText,
+    type: 'confirm',
+    confirmVariant: 'danger',
+    onConfirm: confirmAction,
+  });
 };
 
 const goToPage = async (page: number) => {
@@ -274,6 +337,17 @@ const goToPage = async (page: number) => {
             </div>
         </div>
     </div>
+
+    <!-- Modal Genérico para Confirmações e Alertas -->
+    <GenericModal
+      :is-open="genericModalState.isOpen"
+      :title="genericModalState.title"
+      :message="genericModalState.message"
+      :type="genericModalState.type"
+      :confirm-variant="genericModalState.confirmVariant"
+      @confirm="handleModalConfirm"
+      @close="handleModalClose"
+    />
 
   </div>
 </template>

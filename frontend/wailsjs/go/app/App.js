@@ -34,10 +34,6 @@ export function TogglePin(arg1) {
   return window['go']['app']['App']['TogglePin'](arg1);
 }
 
-export function UpdateClipContent(arg1, arg2) {
-  return window['go']['app']['App']['UpdateClipContent'](arg1, arg2);
-}
-
 export function WriteToClipboard(arg1) {
   return window['go']['app']['App']['WriteToClipboard'](arg1);
 }

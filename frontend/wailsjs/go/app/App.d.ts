@@ -19,6 +19,4 @@ export function OnSecondInstanceLaunch(arg1:options.SecondInstanceData):Promise<
 
 export function TogglePin(arg1:string):Promise<void>;
 
-export function UpdateClipContent(arg1:string,arg2:string):Promise<void>;
-
 export function WriteToClipboard(arg1:string):Promise<void>;

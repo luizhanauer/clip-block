@@ -126,25 +126,6 @@ func (a *App) GetClips(page int, pageSize int, pinned *bool) (*PaginatedClips, e
 func (a *App) DeleteClip(id string) { a.repo.Delete(id) }
 func (a *App) TogglePin(id string)  { a.repo.TogglePin(id) }
 
-// Função para atualizar conteúdo (usada pelo Frontend se necessário)
-func (a *App) UpdateClipContent(id string, newContent string) {
-	// TODO: Melhorar esta função para não precisar buscar todos os clips.
-	// Uma busca por ID no repositório seria mais eficiente.
-	clips, _, err := a.repo.GetAll(1, 9999, nil)
-	if err != nil {
-		return
-	}
-
-	for i, clip := range clips {
-		if clip.ID == id {
-			clips[i].Content = newContent
-			a.repo.Delete(id)     // Remove antigo
-			a.repo.Save(clips[i]) // Salva editado
-			break
-		}
-	}
-}
-
 func (a *App) WriteToClipboard(content string) {
 	a.lastContent = content
 	clipboard.WriteAll(content)
