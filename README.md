@@ -10,7 +10,7 @@
 
 ---
 ##  📸 Screenshot
-![Screenshot](./portfolio-assets/screenshot.png)
+![Screenshot](docs/assets/screenshot.png)
 
 ---
 ## ⚡ Instalação Rápida (Linux)
